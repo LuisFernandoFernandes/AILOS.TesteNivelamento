@@ -4,6 +4,7 @@ using Microsoft.Data.Sqlite;
 using Questao5.Application.Commands.Requests;
 using Questao5.Domain.Exceptions;
 using Questao5.Infrastructure.Sqlite;
+using System.Text.Json;
 
 namespace Questao5.Application.Handlers
 {
@@ -28,7 +29,7 @@ namespace Questao5.Application.Handlers
             ValidarDadosDaRequisicao(request);
 
             var id = await InserirMovimento(connection, request);
-            await SalvarIdempotencia(connection, request.Idempotencia, id);
+            await SalvarIdempotencia(connection, request.Idempotencia, id, request);
 
             return id;
         }
@@ -82,7 +83,7 @@ namespace Questao5.Application.Handlers
             return id;
         }
 
-        private async Task SalvarIdempotencia(SqliteConnection connection, string chave, string resultado)
+        private async Task SalvarIdempotencia(SqliteConnection connection, string chave, string resultado, CriarMovimentacaoCommand request)
         {
             await connection.ExecuteAsync(
                 @"INSERT INTO idempotencia (chave_idempotencia, requisicao, resultado)
@@ -90,7 +91,7 @@ namespace Questao5.Application.Handlers
                 new
                 {
                     chave,
-                    req = "", // você pode serializar o request aqui se quiser
+                    req = JsonSerializer.Serialize(request),
                     res = resultado
                 });
         }
